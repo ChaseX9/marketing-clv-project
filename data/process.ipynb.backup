@@ -18,7 +18,11 @@
   },
   {
    "cell_type": "code",
+<<<<<<< Updated upstream
+   "execution_count": 2,
+=======
    "execution_count": 45,
+>>>>>>> Stashed changes
    "id": "d31d6faf",
    "metadata": {},
    "outputs": [],
@@ -39,7 +43,11 @@
   },
   {
    "cell_type": "code",
+<<<<<<< Updated upstream
+   "execution_count": 3,
+=======
    "execution_count": 46,
+>>>>>>> Stashed changes
    "id": "c69c093a",
    "metadata": {},
    "outputs": [
@@ -153,7 +161,11 @@
        "std      1697.464450  "
       ]
      },
+<<<<<<< Updated upstream
+     "execution_count": 3,
+=======
      "execution_count": 46,
+>>>>>>> Stashed changes
      "metadata": {},
      "output_type": "execute_result"
     }
