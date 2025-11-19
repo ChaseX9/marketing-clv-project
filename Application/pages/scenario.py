@@ -9,7 +9,8 @@ import os
 # ===========================
 @st.cache_data
 def load_data():
-    path = os.path.join("..", "data", "online_retail_II_clean_scenario.csv")
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base_dir, "data", "online_retail_II_clean_scenario.csv")
     df = pd.read_csv(path, parse_dates=['InvoiceDate', 'InvoiceMonth', 'AcquisitionMonth'])
     df['CustomerID'] = df['CustomerID'].astype(int)
     if 'AmountNet' not in df.columns:
