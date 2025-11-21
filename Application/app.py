@@ -1,6 +1,6 @@
 import streamlit as st
 from utils import render_header
-
+from pages.overview import show as show_overview
 # Header commun
 render_header()
 
@@ -13,7 +13,7 @@ page = st.sidebar.selectbox(
 # Contenu placeholder pour tester
 if page == "Overview":
     st.header("Overview (KPIs)")
-    st.write("Ici on affichera les cartes KPIs et les indicateurs globaux.")
+    show_overview()
 elif page == "Cohortes":
     st.header("Cohortes")
     st.write("Ici on affichera la heatmap de rétention et les courbes CA par âge de cohorte.")

@@ -1,25 +1,12 @@
-import os
-import sys
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-
-# ===========================
-# Import render_header
-# ===========================
-BASE_DIR_APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if BASE_DIR_APP not in sys.path:
-    sys.path.append(BASE_DIR_APP)
-
-try:
-    from utils import render_header
-except ImportError:
-    from Application.utils import render_header
+import os
 
 
-# ===========================
-# 1️⃣ Chargement des données
-# ===========================
+# ======================================
+# CHARGEMENT DES DONNÉES
+# ======================================
 @st.cache_data
 def load_data():
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,7 +14,7 @@ def load_data():
 
     df = pd.read_csv(
         path,
-        parse_dates=["InvoiceDate", "InvoiceMonth", "AcquisitionMonth"],
+        parse_dates=["InvoiceDate", "InvoiceMonth", "AcquisitionMonth"]
     )
 
     df["CustomerID"] = df["CustomerID"].astype(int)
@@ -44,24 +31,21 @@ def load_data():
     return df
 
 
-# ===========================
-# 2️⃣ RFM
-# ===========================
+# ======================================
+# RFM
+# ======================================
 def compute_rfm(df):
-    df = df.copy()
     snapshot = df["InvoiceDate"].max() + pd.Timedelta(days=1)
-
-    rfm = df.groupby("CustomerID").agg(
+    return df.groupby("CustomerID").agg(
         Recency=("InvoiceDate", lambda x: (snapshot - x.max()).days),
         Frequency=("InvoiceNo", "nunique"),
         Monetary=("AmountNet", "sum"),
     )
-    return rfm
 
 
-# ===========================
-# 3️⃣ North Star (CA 90 jours)
-# ===========================
+# ======================================
+# NORTH STAR
+# ======================================
 def compute_north_star(df):
     df = df.copy()
     first_purchase = df.groupby("CustomerID")["InvoiceDate"].min().rename("FirstPurchase")
@@ -74,16 +58,17 @@ def compute_north_star(df):
     return total_rev / n_clients if n_clients > 0 else 0.0
 
 
-# ===========================
-# 4️⃣ KPIs globaux
-# ===========================
+# ======================================
+# KPIS GLOBAUX
+# ======================================
 def compute_kpis(df):
+    df = df.copy()
     kpis = {}
 
     # Clients actifs
     kpis["active_clients"] = df["CustomerID"].nunique()
 
-    # CA total et CLV baseline
+    # CLV baseline
     total_rev = df["AmountNet"].sum()
     kpis["clv_baseline"] = total_rev / kpis["active_clients"]
 
@@ -91,7 +76,7 @@ def compute_kpis(df):
     rfm = compute_rfm(df)
     kpis["rfm_count"] = len(rfm)
 
-    # CA / âge de cohorte (moyenne)
+    # CA moyen par âge de cohorte
     inv = df["InvoiceMonth"].dt.to_period("M")
     acq = df["AcquisitionMonth"].dt.to_period("M")
 
@@ -99,7 +84,6 @@ def compute_kpis(df):
     df = df[df["CohortAge"] >= 0]
 
     rev_by_age = df.groupby("CohortAge")["AmountNet"].sum()
-
     kpis["avg_rev_per_age"] = rev_by_age.mean() if not rev_by_age.empty else 0.0
 
     # North Star
@@ -108,38 +92,40 @@ def compute_kpis(df):
     return kpis
 
 
-# ===========================
-# 5️⃣ Page Overview
-# ===========================
-def main():
+# ======================================
+# PAGE OVERVIEW
+# ======================================
+def show():
+    """Affiche la page Overview complète."""
+    st.header("📊 Overview – KPIs Globaux")
+
+    # Charger les données
     df = load_data()
 
-    # Header global
-    render_header(
-        start_date=df["InvoiceDate"].min().strftime("%d/%m/%Y"),
-        end_date=df["InvoiceDate"].max().strftime("%d/%m/%Y")
-    )
-
-    st.subheader("📊 Overview - Synthèse globale")
-
+    # Calculer les KPIs
     kpis = compute_kpis(df)
+
+    # Période globale
+    period_str = f"{df['InvoiceDate'].min().strftime('%d/%m/%Y')} → {df['InvoiceDate'].max().strftime('%d/%m/%Y')}"
+    st.markdown(f"**Période analysée :** {period_str}")
 
     st.markdown("---")
     st.subheader("🔹 KPIs Globaux")
 
-    col1, col2, col3 = st.columns(3)
+    # Ligne 1
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Clients actifs", f"{kpis['active_clients']:,}".replace(",", " "))
+    c2.metric("CA / âge de cohorte (€)", f"{kpis['avg_rev_per_age']:,.2f}".replace(",", " "))
+    c3.metric("CLV baseline (€)", f"{kpis['clv_baseline']:,.2f}".replace(",", " "))
 
-    col1.metric("Clients actifs", f"{kpis['active_clients']:,}".replace(",", " "))
-    col2.metric("CA / âge de cohorte (€)", f"{kpis['avg_rev_per_age']:,.2f}".replace(",", " "))
-    col3.metric("CLV baseline (€)", f"{kpis['clv_baseline']:,.2f}".replace(",", " "))
+    # Ligne 2
+    c4, c5 = st.columns(2)
+    c4.metric("Taille RFM (clients profilés)", f"{kpis['rfm_count']:,}".replace(",", " "))
+    c5.metric("North Star (CA 90j / client)", f"{kpis['north_star']:,.2f}".replace(",", " "))
 
-    col4, col5 = st.columns(2)
-    col4.metric("Taille RFM (clients profilés)", f"{kpis['rfm_count']:,}".replace(",", " "))
-    col5.metric("North Star (CA 90j / client)", f"{kpis['north_star']:,.2f}".replace(",", " "))
-
-    # -------------------------
-    # Graphique CA mensuel global
-    # -------------------------
+    # ==========================
+    # CA MENSUEL GLOBAL
+    # ==========================
     st.markdown("---")
     st.subheader("📈 CA mensuel global")
 
@@ -154,7 +140,3 @@ def main():
     plt.xticks(rotation=45)
 
     st.pyplot(fig)
-
-
-if __name__ == "__main__":
-    main()
