@@ -93,3 +93,56 @@ fig_focus = px.bar(focus_revenue, x="CohortAge", y="AmountNet",
                    labels={"CohortAge": "Âge (mois)", "AmountNet": "CA net"},
                    title=f"CA par âge pour la cohorte {cohorte_select}")
 st.plotly_chart(fig_focus, use_container_width=True)
+
+
+
+
+# === Indicateurs clés ===
+st.subheader("📈 Indicateurs clés")
+
+# CLV moyenne
+clv_moyenne = df.groupby("CustomerID")["AmountNet"].sum().mean()
+
+# CA à 90 jours par nouveau client
+df["DaysSinceAcquisition"] = (df["InvoiceDate"] - df["AcquisitionMonth"]).dt.days
+ca_90 = df[df["DaysSinceAcquisition"] <= 90].groupby("CustomerID")["AmountNet"].sum().mean()
+
+# Rétention M+3
+retention_m3 = cohort_data[cohort_data["CohortAge"] == 3]["RetentionRate"].mean() * 100
+
+# CLV empirique (observée)
+clv_empirique = df.groupby("CustomerID")["AmountNet"].sum().mean()
+
+# CLV formule fermée (exemple avec marge=10€, r=0.8, d=0.1)
+marge = 10
+r = 0.8
+d = 0.1
+clv_formula = (marge * r) / (1 + d - r)
+
+# Affichage des métriques
+st.metric("CLV moyenne", f"{clv_moyenne:.2f} €")
+st.metric("CA à 90 jours", f"{ca_90:.2f} €")
+st.metric("Rétention M+3", f"{retention_m3:.1f} %")
+st.metric("CLV empirique", f"{clv_empirique:.2f} €")
+st.metric("CLV (formule)", f"{clv_formula:.2f} €")
+
+
+
+# Calcul RFM
+rfm = df.groupby("CustomerID").agg({
+    "InvoiceDate": lambda x: (df["InvoiceDate"].max() - x.max()).days,  # Recency
+    "InvoiceNo": "count",  # Frequency
+    "AmountNet": "sum"  # Monetary
+}).rename(columns={"InvoiceDate": "Recency", "InvoiceNo": "Frequency", "AmountNet": "Monetary"})
+
+# Normalisation en scores (1-5)
+rfm["R_Score"] = pd.qcut(rfm["Recency"], 5, labels=[5,4,3,2,1])
+rfm["F_Score"] = pd.qcut(rfm["Frequency"].rank(method="first"), 5, labels=[1,2,3,4,5])
+rfm["M_Score"] = pd.qcut(rfm["Monetary"], 5, labels=[1,2,3,4,5])
+rfm["RFM_Score"] = rfm["R_Score"].astype(str) + rfm["F_Score"].astype(str) + rfm["M_Score"].astype(str)
+
+st.write("Tableau RFM", rfm.head())
+
+
+
+
