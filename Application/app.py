@@ -1,6 +1,9 @@
 import streamlit as st
 from utils import render_header
 from pages.overview import show as show_overview
+from pages.scenario import show as show_scenarios
+from pages.cohortes import show as show_cohortes
+
 # Header commun
 render_header()
 
@@ -16,13 +19,13 @@ if page == "Overview":
     show_overview()
 elif page == "Cohortes":
     st.header("Cohortes")
-    st.write("Ici on affichera la heatmap de rétention et les courbes CA par âge de cohorte.")
+    show_cohortes()
 elif page == "Segments":
     st.header("Segments RFM")
     st.write("Ici on affichera la table RFM et la priorisation des segments.")
 elif page == "Scénarios":
     st.header("Scénarios")
-    st.write("Ici on affichera les sliders pour simuler l’impact sur CLV, CA et marge.")
+    show_scenarios()
 elif page == "Export":
     st.header("Export")
     st.write("Ici on pourra exporter les données filtrées et les graphiques.")
