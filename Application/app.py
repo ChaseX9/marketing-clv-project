@@ -3,6 +3,7 @@ from utils import render_header
 from pages.overview import show as show_overview
 from pages.scenario import show as show_scenarios
 from pages.cohortes import show as show_cohortes
+from pages.segments import show as show_segments
 
 # Header commun
 render_header()
@@ -23,6 +24,7 @@ elif page == "Cohortes":
 elif page == "Segments":
     st.header("Segments RFM")
     st.write("Ici on affichera la table RFM et la priorisation des segments.")
+    show_segments()
 elif page == "Scénarios":
     st.header("Scénarios")
     show_scenarios()
