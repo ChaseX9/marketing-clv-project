@@ -124,6 +124,48 @@ def show():
     c5.metric("North Star (CA 90j / client)", f"{kpis['north_star']:,.2f}".replace(",", " "))
 
     # ==========================
+    # AIDE INTÉGRÉE
+    # ==========================
+    with st.expander("ℹ️ Aide intégrée — définitions & exemples"):
+        st.markdown(
+            """
+            ### 🧩 Définitions des KPIs
+
+            **Clients actifs**  
+            Nombre de clients uniques ayant réalisé au moins une transaction dans toute la période.  
+            *Exemple : Si 4 372 clients différents ont acheté au moins une fois → Clients actifs = 4 372.*
+
+            ---
+
+            **CA / âge de cohorte (€)**  
+            Pour chaque *CohortAge* (H0, H1, H2...), on calcule le CA total et on en fait la moyenne.  
+            *Exemple : Si H0 = 120k€, H1 = 90k€, H2 = 110k€ alors CA moyen par âge = (120+90+110)/3 = 106,6k€.*
+
+            ---
+
+            **CLV baseline (€)**  
+            CA total de la période ÷ nombre de clients actifs.  
+            *Exemple : 4 000 000€ de CA et 4 000 clients actifs → CLV baseline = 1 000€.*
+
+            ---
+
+            **RFM (Recency – Frequency – Monetary)**  
+            - *Recency* : nombre de jours depuis le dernier achat  
+            - *Frequency* : nombre de factures uniques  
+            - *Monetary* : somme totale dépensée  
+            *Exemple : un client a acheté 5 fois pour 450€, dernier achat il y a 12 jours → R=12, F=5, M=450.*
+
+            ---
+
+            **North Star Metric : CA 90 jours / client**  
+            CA généré dans les 90 jours suivant la première transaction, en moyenne par client.  
+            *Exemple : 80 000€ générés dans les 90 premiers jours par 1 000 clients → North Star = 80€.*
+
+            ---
+            """
+        )
+
+    # ==========================
     # CA MENSUEL GLOBAL
     # ==========================
     st.markdown("---")

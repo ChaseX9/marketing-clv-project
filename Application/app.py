@@ -23,7 +23,6 @@ elif page == "Cohortes":
     show_cohortes()
 elif page == "Segments":
     st.header("Segments RFM")
-    st.write("Ici on affichera la table RFM et la priorisation des segments.")
     show_segments()
 elif page == "Scénarios":
     st.header("Scénarios")
