@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 import os
-
 
 # ======================================
 # CHARGEMENT DES DONNÉES
@@ -19,12 +18,14 @@ def load_data():
 
     df["CustomerID"] = df["CustomerID"].astype(int)
 
+    # AmountNet fallback
     if "AmountNet" not in df.columns:
         if "Amount" in df.columns:
             df["AmountNet"] = df["Amount"]
         else:
             df["AmountNet"] = df["Quantity"] * df["UnitPrice"]
 
+    # Détection des retours
     if "IsReturn" not in df.columns and "InvoiceNo" in df.columns:
         df["IsReturn"] = df["InvoiceNo"].astype(str).str.startswith("C")
 
@@ -79,7 +80,6 @@ def compute_kpis(df):
     # CA moyen par âge de cohorte
     inv = df["InvoiceMonth"].dt.to_period("M")
     acq = df["AcquisitionMonth"].dt.to_period("M")
-
     df["CohortAge"] = (inv - acq).apply(lambda x: x.n)
     df = df[df["CohortAge"] >= 0]
 
@@ -99,10 +99,10 @@ def show():
     """Affiche la page Overview complète."""
     st.header("📊 Overview – KPIs Globaux")
 
-    # Charger les données
+    # Charger données
     df = load_data()
 
-    # Calculer les KPIs
+    # KPIs
     kpis = compute_kpis(df)
 
     # Période globale
@@ -132,41 +132,26 @@ def show():
             ### 🧩 Définitions des KPIs
 
             **Clients actifs**  
-            Nombre de clients uniques ayant réalisé au moins une transaction dans toute la période.  
-            *Exemple : Si 4 372 clients différents ont acheté au moins une fois → Clients actifs = 4 372.*
-
-            ---
+            Nombre de clients uniques ayant réalisé au moins une transaction.
 
             **CA / âge de cohorte (€)**  
-            Pour chaque *CohortAge* (H0, H1, H2...), on calcule le CA total et on en fait la moyenne.  
-            *Exemple : Si H0 = 120k€, H1 = 90k€, H2 = 110k€ alors CA moyen par âge = (120+90+110)/3 = 106,6k€.*
-
-            ---
+            Moyenne du CA total généré par âge de cohorte (H0, H1, H2…).
 
             **CLV baseline (€)**  
-            CA total de la période ÷ nombre de clients actifs.  
-            *Exemple : 4 000 000€ de CA et 4 000 clients actifs → CLV baseline = 1 000€.*
+            CA total / nombre de clients actifs.
 
-            ---
+            **RFM**  
+            Recency (jours depuis dernier achat)  
+            Frequency (nombre de factures)  
+            Monetary (montant total dépensé)
 
-            **RFM (Recency – Frequency – Monetary)**  
-            - *Recency* : nombre de jours depuis le dernier achat  
-            - *Frequency* : nombre de factures uniques  
-            - *Monetary* : somme totale dépensée  
-            *Exemple : un client a acheté 5 fois pour 450€, dernier achat il y a 12 jours → R=12, F=5, M=450.*
-
-            ---
-
-            **North Star Metric : CA 90 jours / client**  
-            CA généré dans les 90 jours suivant la première transaction, en moyenne par client.  
-            *Exemple : 80 000€ générés dans les 90 premiers jours par 1 000 clients → North Star = 80€.*
-
-            ---
+            **North Star Metric**  
+            CA généré par client dans les 90 jours suivant l'acquisition.
             """
         )
 
     # ==========================
-    # CA MENSUEL GLOBAL
+    # CA MENSUEL GLOBAL — PLOTLY
     # ==========================
     st.markdown("---")
     st.subheader("📈 CA mensuel global")
@@ -174,11 +159,17 @@ def show():
     monthly = df.groupby(df["InvoiceMonth"].dt.to_period("M"))["AmountNet"].sum()
     monthly.index = monthly.index.to_timestamp()
 
-    fig, ax = plt.subplots(figsize=(12, 4))
-    ax.plot(monthly.index, monthly.values, marker="o")
-    ax.set_title("CA mensuel global")
-    ax.set_ylabel("CA (€)")
-    ax.grid(alpha=0.3)
-    plt.xticks(rotation=45)
+    fig = px.line(
+        x=monthly.index,
+        y=monthly.values,
+        labels={"x": "Mois", "y": "CA (€)"},
+        title="CA mensuel global"
+    )
 
-    st.pyplot(fig)
+    fig.update_layout(
+        template="plotly_dark",
+        showlegend=False,
+        hovermode="x unified"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
