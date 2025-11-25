@@ -2,6 +2,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import os
 
 # ===========================
@@ -103,7 +106,7 @@ def show():
 
     st.write("")
     st.write("")
-    st.subheader("📈 Représentation visuelle des KPI")
+    st.subheader("📈 Représentation visuelle des KPI Baseline/Scénario")
 
     monthly = df_scenario.groupby(df_scenario['InvoiceMonth'].dt.to_period('M')).agg({
         'AmountNet': ['sum', lambda x: x.sum()/x.nunique()],
@@ -112,81 +115,182 @@ def show():
     monthly.columns = ['CA_baseline', 'CLV_baseline', 'CA_scenario', 'CLV_scenario']
     monthly.index = monthly.index.to_timestamp()
 
-    fig, ax = plt.subplots(1, 2, figsize=(16, 6), facecolor='none')  # 1 ligne, 2 colonnes
+    # 📊 Subplots Plotly
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("CA mensuel", "CLV mensuel")
+    )
 
-    # CA mensuel
-    ax[0].plot(monthly.index, monthly['CA_baseline'], label='CA Baseline', color='#1f77b4', marker='o')
-    ax[0].plot(monthly.index, monthly['CA_scenario'], label='CA Scénario', color='#ff7f0e', marker='o')
-    ax[0].set_title('CA mensuel', color='white')
-    ax[0].set_ylabel('CA (€)', color='white')
-    ax[0].legend()
-    ax[0].tick_params(axis='x', rotation=45, colors='white')
-    ax[0].tick_params(axis='y', colors='white')
-    ax[0].grid(alpha=0.3)
-    ax[0].set_facecolor('none')
+    # --- CA mensuel ---
+    fig.add_trace(
+        go.Scatter(
+            x=monthly.index,
+            y=monthly['CA_baseline'],
+            mode='lines+markers',
+            name='CA Baseline'
+        ),
+        row=1, col=1
+    )
 
-    # CLV mensuel
-    ax[1].plot(monthly.index, monthly['CLV_baseline'], label='CLV Baseline', color='#1f77b4', marker='o')
-    ax[1].plot(monthly.index, monthly['CLV_scenario'], label='CLV Scénario', color='#ff7f0e', marker='o')
-    ax[1].set_title('CLV mensuel', color='white')
-    ax[1].set_ylabel('CLV (€)', color='white')
-    ax[1].legend()
-    ax[1].tick_params(axis='x', rotation=45, colors='white')
-    ax[1].tick_params(axis='y', colors='white')
-    ax[1].grid(alpha=0.3)
-    ax[1].set_facecolor('none')
+    fig.add_trace(
+        go.Scatter(
+            x=monthly.index,
+            y=monthly['CA_scenario'],
+            mode='lines+markers',
+            name='CA Scénario'
+        ),
+        row=1, col=1
+    )
 
-    st.pyplot(fig)
+    # --- CLV mensuel ---
+    fig.add_trace(
+        go.Scatter(
+            x=monthly.index,
+            y=monthly['CLV_baseline'],
+            mode='lines+markers',
+            name='CLV Baseline'
+        ),
+        row=1, col=2
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=monthly.index,
+            y=monthly['CLV_scenario'],
+            mode='lines+markers',
+            name='CLV Scénario'
+        ),
+        row=1, col=2
+    )
+
+    fig.update_layout(
+        height=500,
+        showlegend=True,
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
     # ===========================
     # 5️⃣ Bar charts CLV / CA Baseline vs Scénario
     # ===========================
-    fig2, ax2 = plt.subplots(1, 2, figsize=(12, 4), facecolor='none')
 
-    # Données et couleurs
+    fig2 = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("CLV moyen", "CA total")
+    )
+
     labels = ['Baseline', 'Scénario']
     clv_vals = [clv_baseline, clv_scenario]
     ca_vals = [ca_baseline, ca_scenario]
-    colors = ['#1f77b4', '#ff7f0e']
 
-    # Bar chart CLV
-    bars0 = ax2[0].bar(labels, clv_vals, color=colors)
-    ax2[0].set_title('CLV moyen', color='white')
-    ax2[0].tick_params(axis='y', colors='white')
-    ax2[0].tick_params(axis='x', colors='white')
-    ax2[0].set_facecolor('none')
+    # --- Bar chart CLV ---
+    fig2.add_trace(
+        go.Bar(
+            x=labels,
+            y=clv_vals,
+            text=[f"{v:,.2f}" for v in clv_vals],
+            textposition='outside',
+            name="CLV"
+        ),
+        row=1, col=1
+    )
 
-    # Ajouter les valeurs au-dessus des barres
-    for bar, val in zip(bars0, clv_vals):
-        height = bar.get_height()
-        ax2[0].text(bar.get_x() + bar.get_width()/2, height, f'{val:,.2f}', ha='center', va='bottom', color='white')
+    # --- Bar chart CA ---
+    fig2.add_trace(
+        go.Bar(
+            x=labels,
+            y=ca_vals,
+            text=[f"{v:,.2f}" for v in ca_vals],
+            textposition='outside',
+            name="CA"
+        ),
+        row=1, col=2
+    )
 
-    # Bar chart CA
-    bars1 = ax2[1].bar(labels, ca_vals, color=colors)
-    ax2[1].set_title('CA total', color='white')
-    ax2[1].tick_params(axis='y', colors='white')
-    ax2[1].tick_params(axis='x', colors='white')
-    ax2[1].set_facecolor('none')
+    fig2.update_layout(
+        height=450,
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+    )
 
-    # Ajouter les valeurs au-dessus des barres
-    for bar, val in zip(bars1, ca_vals):
-        height = bar.get_height()
-        ax2[1].text(bar.get_x() + bar.get_width()/2, height, f'{val:,.2f}', ha='center', va='bottom', color='white')
+    st.plotly_chart(fig2, use_container_width=True)
 
-    st.pyplot(fig2)
-
+    # ==========================
+    # ℹ️ AIDE INTÉGRÉE
+    # ==========================
     st.write("")
     st.write("")
-    # ===========================
-    # 6️⃣ Export des données CSV
-    # ===========================
-    st.subheader("💾 Exporter les données")
+    with st.expander("ℹ️ Aide intégrée — comprendre les KPI et les paramètres du scénario"):
+        st.markdown(
+            """
+            ## 🧠 Comprendre les KPI & le fonctionnement des scénarios
 
-    if st.button("Exporter en CSV"):
-        csv = df_scenario.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Télécharger le CSV",
-            data=csv,
-            file_name='scenario_data.csv',
-            mime='text/csv'
+            Cette section vous aide à comprendre **comment les paramètres du scénario impactent les KPI**
+            affichés plus haut : **CLV**, **CA total** et **rétention**.
+
+            ---
+
+            ### 📌 **1. CLV (Customer Lifetime Value)**  
+            Le **CLV** représente le montant moyen dépensé par un client durant toute la période analysée.  
+            👉 *CLV = Somme des achats par client / Nombre de clients*
+
+            **Exemple :**  
+            Si un client a dépensé 280€, un deuxième 320€ → CLV = 300€.
+
+            **Impact des sliders :**  
+            - La *variation de marge* augmente ou réduit le montant net par transaction.  
+            - La *remise moyenne* réduit le montant payé par le client.  
+            - La *variation de rétention* influence la probabilité qu’un client génère de nouvelles transactions.
+
+            ---
+
+            ### 💶 **2. Chiffre d’Affaires (CA total)**  
+            Le **CA total** est la somme des montants nets générés sur la période sélectionnée.
+
+            **Exemple :**  
+            Si 10 transactions de 50€ → CA = 500€.
+
+            **Impact des sliders :**
+            - *Variation de marge* : augmente ou diminue le montant de chaque vente.  
+            - *Remise moyenne* : réduit le montant payé.  
+            - *Variation de rétention* : plus les clients restent, plus il y a de transactions → CA augmente.
+
+            ---
+
+            ### 🔁 **3. Rétention transactionnelle**  
+            Mesure la part des transactions qui ne sont **pas** des retours.  
+            👉 *Rétention = Transactions valides / Toutes les transactions*
+
+            **Exemple :**  
+            900 transactions valides / 1 000 total → Rétention = 90%.
+
+            **Impact du slider :**  
+            Le slider simule une amélioration ou baisse de la rétention client.
+
+            ---
+
+            ### 🛠️ **4. Comment fonctionne la simulation ?**
+            Lorsque vous modifiez un paramètre :
+            - Le montant de chaque transaction est ajusté → (Marge + Remise)
+            - La rétention modifie le volume de transactions simulées
+            - Les nouveaux KPI **répondent dynamiquement** à vos paramètres
+
+            ---
+
+            ### 📊 **5. Graphiques**
+            - Les **courbes mensuelles** comparent Baseline vs Scénario sur le CA et le CLV.  
+            - Les **bar charts** affichent l’impact global sur toute la période.
+
+            Ces visualisations permettent :
+            - de comprendre les tendances,  
+            - d’identifier les mois les plus sensibles,  
+            - et de comparer l'effet total entre *Baseline* et *Scénario*.
+
+            ---
+
+            Si vous souhaitez ajouter plus d’explications ou un tutoriel interactif, je peux vous le générer 😊
+            """
         )
