@@ -115,13 +115,13 @@ def show():
     # Ligne 1
     c1, c2, c3 = st.columns(3)
     c1.metric("Clients actifs", f"{kpis['active_clients']:,}".replace(",", " "))
-    c2.metric("CA / âge de cohorte (€)", f"{kpis['avg_rev_per_age']:,.2f}".replace(",", " "))
-    c3.metric("CLV baseline (€)", f"{kpis['clv_baseline']:,.2f}".replace(",", " "))
+    c2.metric("CA / âge de cohorte (£)", f"{kpis['avg_rev_per_age']:,.2f}".replace(",", " "))
+    c3.metric("CLV baseline (£)", f"{kpis['clv_baseline']:,.2f}".replace(",", " "))
 
     # Ligne 2
     c4, c5 = st.columns(2)
     c4.metric("Taille RFM (clients profilés)", f"{kpis['rfm_count']:,}".replace(",", " "))
-    c5.metric("North Star (CA 90j / client)", f"{kpis['north_star']:,.2f}".replace(",", " "))
+    c5.metric("North Star (CA 90j / client) (£)", f"{kpis['north_star']:,.2f}".replace(",", " "))
 
     # ==========================
     # AIDE INTÉGRÉE
@@ -134,19 +134,19 @@ def show():
             **Clients actifs**  
             Nombre de clients uniques ayant réalisé au moins une transaction.
 
-            **CA / âge de cohorte (€)**  
+            **CA / âge de cohorte (£)**  
             Moyenne du CA total généré par âge de cohorte (H0, H1, H2…).
 
-            **CLV baseline (€)**  
+            **CLV baseline (£)**  
             CA total / nombre de clients actifs.
 
             **RFM**  
-            Recency (jours depuis dernier achat)  
-            Frequency (nombre de factures)  
-            Monetary (montant total dépensé)
+            Recency — jours depuis dernier achat  
+            Frequency — nombre de factures  
+            Monetary — montant total dépensé
 
-            **North Star Metric**  
-            CA généré par client dans les 90 jours suivant l'acquisition.
+            **North Star (£)**  
+            CA généré dans les 90 jours suivant l'acquisition.
             """
         )
 
@@ -154,7 +154,7 @@ def show():
     # CA MENSUEL GLOBAL — PLOTLY
     # ==========================
     st.markdown("---")
-    st.subheader("📈 CA mensuel global")
+    st.subheader("📈 CA mensuel global (£)")
 
     monthly = df.groupby(df["InvoiceMonth"].dt.to_period("M"))["AmountNet"].sum()
     monthly.index = monthly.index.to_timestamp()
@@ -162,8 +162,8 @@ def show():
     fig = px.line(
         x=monthly.index,
         y=monthly.values,
-        labels={"x": "Mois", "y": "CA (€)"},
-        title="CA mensuel global"
+        labels={"x": "Mois", "y": "CA (£)"},
+        title="CA mensuel global (£)"
     )
 
     fig.update_layout(
